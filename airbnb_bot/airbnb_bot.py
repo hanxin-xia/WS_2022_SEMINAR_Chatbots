@@ -1,4 +1,5 @@
 import re
+import string
 import sqlite3 as sql
 from os.path import isfile
 
@@ -35,6 +36,18 @@ def get_location_from_input(sentence, regex_list=location_regex):
     # return None if no regular expression matches the input
     return None
 
+def get_budget(budget):
+    try:
+        for char in budget:
+            if char in "0123456789":
+                budget = False
+            else:
+                raise ValueError
+        print('starting text extraction...')
+    except(ValueError):
+        budget = True
+        print("Invalid input, use integer only!")
+    
 
 def query_sql(key, value, columns, sql_file):
     """
@@ -85,76 +98,87 @@ def airbnb_bot(sql_file, top_n):
     #########################################
     # STEP 1: say hi and ask for user input #
     #########################################
+    
+    start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise in Berlin?\n')
+    start_sent = start_sent.lower().translate(str.maketrans('', '', string.punctuation))   
 
-    print('Hallöchen!\n')
+    confirmation = ['ok', 'klar', 'ja', 'natürlich', 'sicher', 'doch', 'yes']
+    for i in range(len(confirmation)):
+        if confirmation[i] in start_sent:
+                
+            # print available neighbourhoods
+            neighbourhoods = [
+                'Charlottenburg-Wilm.', 'Friedrichshain-Kreuzberg',
+                'Lichtenberg', 'Marzahn - Hellersdorf', 'Mitte', 'Neukölln', 'Pankow',
+                'Reinickendorf', 'Spandau', 'Steglitz - Zehlendorf',
+                'Tempelhof - Schöneberg', 'Treptow - Köpenick']
+            print('Wir haben Appartements in folgenden Stadtteilen:')
+            print(', '.join(neighbourhoods))
 
-    # print available neighbourhoods
-    neighbourhoods = [
-        'Charlottenburg-Wilm.', 'Friedrichshain-Kreuzberg',
-        'Lichtenberg', 'Marzahn - Hellersdorf', 'Mitte', 'Neukölln', 'Pankow',
-        'Reinickendorf', 'Spandau', 'Steglitz - Zehlendorf',
-        'Tempelhof - Schöneberg', 'Treptow - Köpenick']
-    print('Wir haben Appartements in folgenden Stadtteilen:')
-    print(', '.join(neighbourhoods))
+            # get query from user
+            sentence = input('\nWo möchtest du denn übernachten?\n')
+            # normalize to lowercase
+            sentence = sentence.lower()
 
-    # get query from user
-    sentence = input('\nWo möchtest du denn übernachten?\n')
-    # normalize to lowercase
-    sentence = sentence.lower()
-
-    #####################################################################
-    # STEP 2: extract location information and check whether it's valid #
-    #####################################################################
-
-
-
-    # NLU -SPRACHVERSTEHEN
-
-    # extract location from user input
-    location = get_location_from_input(sentence)
-
-    if location is None:
-        # if the user input doesn't contain valid location information:
-        # apologize & quit
-        print('\nEntschuldigung, das habe ich leider nicht verstanden...')
-        return
-
-    #####################################################################
-    # STEP 3: query sqlite file for flats in the area given by the user #
-    #####################################################################
-
-    # get matches from csv file
-    columns = ['name', 'neighbourhood', 'price']
-    results = query_sql(
-            key='neighbourhood_group', value=location,
-            columns=columns, sql_file=sql_file
-        )
-
-    # if there are no results: apologize & quit
-    if len(results) == 0:
-        print('Tut mir Leid, ich konnte leider nichts finden!')
-        return
+            #####################################################################
+            # STEP 2: extract location information and check whether it's valid #
+            #####################################################################
 
 
-    #############################################################################
-    # STEP 4: print information about the first top_n flats in the results list #
-    #############################################################################
 
-    # NLG- Sprachgenerierung
+            # NLU -SPRACHVERSTEHEN
 
-    # return results
-    print('Ich habe {} passende Wohnungen in {} gefunden.\n'.format(
-        len(results), location))
-    print('Hier sind die {} besten Ergebnisse:\n'.format(top_n))
+            # extract location from user input
+            location = get_location_from_input(sentence)
 
-    # print the first top_n entries from the results list
-    for r in results[:top_n]:
-        answer = '"{}", {}. Das Apartment kostet {}€.'.format(
-            # look at the columns list to see what r[0], r[1], r[2] are referring to!
-            r[0], r[1], r[2]
-        )
-        print(answer)
+            if location is None:
+                # if the user input doesn't contain valid location information:
+                # apologize & quit
+                print('\nEntschuldigung, das habe ich leider nicht verstanden...')
+                return
 
+            # get budget of the user
+
+
+
+            #####################################################################
+            # STEP 3: query sqlite file for flats in the area given by the user #
+            #####################################################################
+
+            # get matches from csv file
+            columns = ['name', 'neighbourhood', 'price']
+            results = query_sql(
+                    key='neighbourhood_group', value=location,
+                    columns=columns, sql_file=sql_file
+                )
+
+            # if there are no results: apologize & quit
+            if len(results) == 0:
+                print('Tut mir Leid, ich konnte leider nichts finden!')
+                return
+
+
+            #############################################################################
+            # STEP 4: print information about the first top_n flats in the results list #
+            #############################################################################
+
+            # NLG- Sprachgenerierung
+
+            # return results
+            print('Ich habe {} passende Wohnungen in {} gefunden.\n'.format(
+                len(results), location))
+            print('Hier sind die {} besten Ergebnisse:\n'.format(top_n))
+
+            # print the first top_n entries from the results list
+            for r in results[:top_n]:
+                number = '"{}", {}. Das Apartment kostet {}€.'.format(
+                    # look at the columns list to see what r[0], r[1], r[2] are referring to!
+                    r[0], r[1], r[2]
+                )
+                print(number)
+            break
+    else:
+        print('Leider kann ich vorerst nichts für dich tun :(')
 
 if __name__ == '__main__':
     #  the airbnb_bot() function is called if the script is executed!
