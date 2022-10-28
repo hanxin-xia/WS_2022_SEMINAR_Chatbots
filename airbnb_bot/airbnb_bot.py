@@ -36,17 +36,17 @@ def get_location_from_input(sentence, regex_list=location_regex):
     # return None if no regular expression matches the input
     return None
 
-def get_budget(budget):
+def check_budget_validity(budget):
     try:
         for char in budget:
             if char in "0123456789":
                 budget = False
             else:
                 raise ValueError
-        print('starting text extraction...')
+        return True
     except(ValueError):
         budget = True
-        print("Invalid input, use integer only!")
+        return False
     
 
 def query_sql(key, value, columns, sql_file):
