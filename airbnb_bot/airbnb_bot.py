@@ -8,7 +8,7 @@ location_regex = [
     # first entry in every tuple is a regex for matching user inputs
     # second entry in every tuple is a possible value
     #   for the key neighbourhood_group in our sql file
-    (r'(charlottenburg)|(wilmersdorf)','Charlottenburg-Wilm.'),
+    (r'(charlottenburg)|(wilmersdorf)', 'Charlottenburg-Wilm.'),
     (r'(friedrichshain)|(kreuzberg)', 'Friedrichshain-Kreuzberg'),
     (r'lichtenberg', 'Lichtenberg'),
     (r'(marzahn)|(Hellersdorf)', 'Marzahn - Hellersdorf'),
@@ -36,18 +36,20 @@ def get_location_from_input(sentence, regex_list=location_regex):
     # return None if no regular expression matches the input
     return None
 
-def check_budget_validity(budget):
+
+def get_budget():
+    budget = input("Was ist dein Budget pro Nacht?\n")
     try:
         for char in budget:
             if char in "0123456789":
-                budget = False
+                return int(budget)
             else:
                 raise ValueError
-        return True
+        return budget
     except(ValueError):
-        budget = True
+        print("Bitte gib nur eine Zahl ein, damit ich Mathematik machen kann!")
         return False
-    
+
 
 def query_sql(key, value, columns, sql_file):
     """
@@ -93,19 +95,19 @@ def airbnb_bot(sql_file, top_n):
         # raise an error if the file is not found
         raise FileNotFoundError(
             'Die Datei {} konnte nicht gefunden werden!'.format(sql_file)
-            )
+        )
 
     #########################################
     # STEP 1: say hi and ask for user input #
     #########################################
-    
-    start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise in Berlin?\n')
-    start_sent = start_sent.lower().translate(str.maketrans('', '', string.punctuation))   
+
+    start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise nach Berlin?\n')
+    start_sent = start_sent.lower().translate(str.maketrans('', '', string.punctuation))
 
     confirmation = ['ok', 'klar', 'ja', 'natürlich', 'sicher', 'doch', 'yes']
     for i in range(len(confirmation)):
         if confirmation[i] in start_sent:
-                
+
             # print available neighbourhoods
             neighbourhoods = [
                 'Charlottenburg-Wilm.', 'Friedrichshain-Kreuzberg',
@@ -138,8 +140,7 @@ def airbnb_bot(sql_file, top_n):
                 return
 
             # get budget of the user
-
-
+            budget = get_budget()
 
             #####################################################################
             # STEP 3: query sqlite file for flats in the area given by the user #
@@ -148,9 +149,9 @@ def airbnb_bot(sql_file, top_n):
             # get matches from csv file
             columns = ['name', 'neighbourhood', 'price']
             results = query_sql(
-                    key='neighbourhood_group', value=location,
-                    columns=columns, sql_file=sql_file
-                )
+                key='neighbourhood_group', value=location,
+                columns=columns, sql_file=sql_file
+            )
 
             # if there are no results: apologize & quit
             if len(results) == 0:
@@ -180,6 +181,11 @@ def airbnb_bot(sql_file, top_n):
     else:
         print('Leider kann ich vorerst nichts für dich tun :(')
 
+
 if __name__ == '__main__':
     #  the airbnb_bot() function is called if the script is executed!
     airbnb_bot(sql_file='listings.db', top_n=10)
+
+
+
+
