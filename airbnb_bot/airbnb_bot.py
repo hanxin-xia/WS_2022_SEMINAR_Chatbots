@@ -23,13 +23,13 @@ location_regex = [
 ]
 
 
-def get_location_from_input(sentence, regex_list=location_regex):
+def get_location_from_input(loc_sentence, regex_list=location_regex):
     """
     get valid location names from user input using RegEx
     """
     # iterate through regular expressions and associated values in regex_list
     for regex, value in regex_list:
-        match = re.search(regex, sentence)
+        match = re.search(regex, loc_sentence)
         if match:
             # if a regex matches the input: return the corresponding value
             return value
@@ -37,7 +37,7 @@ def get_location_from_input(sentence, regex_list=location_regex):
     return None
 
 
-room_regex = [
+room_type_regex = [
     (r'wohnung', 'Entire home/apt'),
     (r'haus', 'Entire home/apt'),
     (r'apartment', 'Entire home/apt'),
@@ -50,9 +50,9 @@ room_regex = [
 ]
 
 
-def get_room_type(sentence, regex_list=room_regex):
+def get_room_type(room_type_sent, regex_list=room_type_regex):
     for regex, value in regex_list:
-        match = re.search(regex, sentence)
+        match = re.search(regex, room_type_sent)
         if match:
             # if a regex matches the input: return the corresponding value
             return value
@@ -86,10 +86,14 @@ def query_sql(key, value, budget, stay_nights, wished_room_type, columns, sql_fi
 
 
     # prepare query string that contains all three conditions
-    query_template = 'SELECT {columns} FROM listings WHERE {key} = "{value}" AND price <= {budget} AND minimum_nights <= {stay_nights} AND room_type = "{wished_room_type}"'
+    query_template = '''SELECT {columns}
+                        FROM listings
+                        WHERE {key} = "{value}" AND price <= {budget}
+                        AND minimum_nights <= {stay_nights} AND room_type = "{wished_room_type}"'''
     columns_string = ', '.join(columns)  # e.g. [location, price] -> 'location, price'
     # replace the curly brackets in query_template with the corresponding info
-    query = query_template.format(columns=columns_string, key=key, value=value, budget=budget, stay_nights=stay_nights, wished_room_type=wished_room_type)
+    query = query_template.format(columns=columns_string, key=key, value=value,
+                                  budget=budget, stay_nights=stay_nights, wished_room_type=wished_room_type)
 
     # execute query
     r = c.execute(query)
@@ -125,10 +129,10 @@ def airbnb_bot(sql_file, top_n):
     # STEP 1: say hi and ask for user input #
     #########################################
 
-    start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise nach Berlin?\n')
+    start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise nach Berlin? ')
     start_sent = start_sent.lower().translate(str.maketrans('', '', string.punctuation))
 
-    confirmation = ['ok', 'klar', 'ja', 'natürlich', 'sicher', 'doch', 'yes']
+    confirmation = ['ok', 'klar', 'ja', 'natürlich', 'sicher', 'doch', 'yes', 'auf jeden fall']
     for i in range(len(confirmation)):
         if confirmation[i] in start_sent:
 
@@ -138,13 +142,13 @@ def airbnb_bot(sql_file, top_n):
                 'Lichtenberg', 'Marzahn - Hellersdorf', 'Mitte', 'Neukölln', 'Pankow',
                 'Reinickendorf', 'Spandau', 'Steglitz - Zehlendorf',
                 'Tempelhof - Schöneberg', 'Treptow - Köpenick']
-            print('Wir haben Appartements in folgenden Stadtteilen:')
+            print('\nSehr schön! Wir haben Appartements in folgenden Stadtteilen:')
             print(', '.join(neighbourhoods))
 
             # get query from user
-            sentence = input('\nWo möchtest du denn übernachten?\n')
+            loc_sentence = input('\nWo möchtest du denn übernachten? ')
             # normalize to lowercase
-            sentence = sentence.lower()
+            loc_sentence = loc_sentence.lower()
 
             #####################################################################
             # STEP 2: extract location information and check whether it's valid #
@@ -155,7 +159,7 @@ def airbnb_bot(sql_file, top_n):
             # NLU -SPRACHVERSTEHEN
 
             # extract location from user input
-            location = get_location_from_input(sentence)
+            location = get_location_from_input(loc_sentence)
 
             if location is None:
                 # if the user input doesn't contain valid location information:
@@ -166,22 +170,23 @@ def airbnb_bot(sql_file, top_n):
             # get budget of the user
             answer = True
             while answer:
-                budget = input('Was ist dein Budget pro Nacht? ')
+                budget = input('\nWas ist dein Budget pro Nacht? ')
                 if check_validity(budget, answer) == True:
                     break
 
             # get how many nights the user wants to stay in
             answer = True
             while answer:
-                stay_nights = input('Wie viele Nächte möchtest du übernachten? ')
+                stay_nights = input('\nWie viele Nächte möchtest du übernachten? ')
                 if check_validity(stay_nights, answer) == True:
                     break
-            
-            # get wished residence type
-            query_res_type = input('Welche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
-            # normalize to lowercase
-            query_res_type = query_res_type.lower()
-            wished_room_type = get_room_type(query_res_type, regex_list=room_regex)
+
+            # get wished room type
+            room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
+            room_type_sent = room_type_sent.lower()
+            wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
+
+
 
             #####################################################################
             # STEP 3: query sqlite file for flats in the area given by the user #
@@ -191,7 +196,7 @@ def airbnb_bot(sql_file, top_n):
             columns = ['name', 'neighbourhood', 'price', 'minimum_nights', 'room_type']
             results = query_sql(
                 key='neighbourhood_group', value=location, budget=budget, stay_nights=stay_nights, wished_room_type=wished_room_type,
-                columns=columns, sql_file=sql_file, 
+                columns=columns, sql_file=sql_file,
             )
 
             # if there are no results: apologize & quit
@@ -207,13 +212,13 @@ def airbnb_bot(sql_file, top_n):
             # NLG- Sprachgenerierung
 
             # return results
-            print('Ich habe {} passende Wohnungen in {} gefunden.\n'.format(
+            print('\nIch habe {} passende Wohnungen in {} gefunden.\n'.format(
                 len(results), location))
             print('Hier sind die {} besten Ergebnisse:\n'.format(top_n))
 
             # print the first top_n entries from the results list
             for r in results[:top_n]:
-                number = '"{}", {}. Das Apartment kostet {}€.'.format(
+                number = '  🏡"{}", {}. Das Apartment kostet {}€ pro Nacht.'.format(
                     # look at the columns list to see what r[0], r[1], r[2] are referring to!
                     r[0], r[1], r[2]
                 )
