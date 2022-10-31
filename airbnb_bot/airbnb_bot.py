@@ -23,17 +23,18 @@ location_regex = [
 ]
 
 
-def get_location_from_input(loc_sentence, regex_list=location_regex):
+def get_location_from_input(loc_sent, regex_list=location_regex):
     """
     get valid location names from user input using RegEx
     """
     # iterate through regular expressions and associated values in regex_list
     for regex, value in regex_list:
-        match = re.search(regex, loc_sentence)
+        match = re.search(regex, loc_sent)
         if match:
             # if a regex matches the input: return the corresponding value
             return value
     # return None if no regular expression matches the input
+    print("Sorry, ich habe nicht verstanden. Kannst du deine Wünsche etwa unformulieren?")
     return None
 
 
@@ -57,6 +58,7 @@ def get_room_type(room_type_sent, regex_list=room_type_regex):
             # if a regex matches the input: return the corresponding value
             return value
     # return None if no regular expression matches the input
+    print("Sorry, ich habe nicht verstanden. Kannst du deine Wünsche etwa unformulieren?")
     return None
 
 
@@ -145,27 +147,22 @@ def airbnb_bot(sql_file, top_n):
             print('\nSehr schön! Wir haben Appartements in folgenden Stadtteilen:')
             print(', '.join(neighbourhoods))
 
-            # get query from user
-            loc_sentence = input('\nWo möchtest du denn übernachten? ')
-            # normalize to lowercase
-            loc_sentence = loc_sentence.lower()
 
             #####################################################################
             # STEP 2: extract location information and check whether it's valid #
             #####################################################################
 
 
-
             # NLU -SPRACHVERSTEHEN
 
             # extract location from user input
-            location = get_location_from_input(loc_sentence)
-
-            if location is None:
-                # if the user input doesn't contain valid location information:
-                # apologize & quit
-                print('\nEntschuldigung, das habe ich leider nicht verstanden...')
-                return
+            answer = True
+            while answer:
+                loc_sent = input('\nWo möchtest du denn übernachten? ')
+                loc_sent = loc_sent.lower()
+                if get_location_from_input(loc_sent, regex_list=location_regex) != None:
+                    location = get_location_from_input(loc_sent, regex_list=location_regex)
+                    break
 
             # get budget of the user
             answer = True
@@ -182,10 +179,17 @@ def airbnb_bot(sql_file, top_n):
                     break
 
             # get wished room type
-            room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
-            room_type_sent = room_type_sent.lower()
-            wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
+            # room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
+            # room_type_sent = room_type_sent.lower()
+            # wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
 
+            answer = True
+            while answer:
+                room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
+                room_type_sent = room_type_sent.lower()
+                if get_room_type(room_type_sent, regex_list=room_type_regex) != None:
+                    wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
+                    break
 
 
             #####################################################################
