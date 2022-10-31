@@ -51,7 +51,7 @@ def get_budget():
         return False
 
 
-def query_sql(key, value, columns, sql_file):
+def query_sql(key, value, budget, stay_nights, columns, sql_file):
     """
     Query a sqlite file for entries where "key" has the value "value".
     Return the values corresponding to columns as a list.
@@ -62,16 +62,17 @@ def query_sql(key, value, columns, sql_file):
     c = conn.cursor()
 
 
-    # prepare query string
-    query_template = 'SELECT {columns} FROM listings WHERE {key} = "{value}"'
+    # prepare query string that contains all three conditions
+    query_template = 'SELECT {columns} FROM listings WHERE {key} = "{value}" AND price <= {budget} AND minimum_nights <= {stay_nights}'
     columns_string = ', '.join(columns)  # e.g. [location, price] -> 'location, price'
     # replace the curly brackets in query_template with the corresponding info
-    query = query_template.format(columns=columns_string, key=key, value=value)
+    query = query_template.format(columns=columns_string, key=key, value=value, budget=budget, stay_nights=stay_nights)
 
     # execute query
     r = c.execute(query)
     # get results as list
     results = r.fetchall()
+
 
     # close connection
     conn.close()
@@ -147,9 +148,9 @@ def airbnb_bot(sql_file, top_n):
             #####################################################################
 
             # get matches from csv file
-            columns = ['name', 'neighbourhood', 'price']
+            columns = ['name', 'neighbourhood', 'price', 'minimum_nights']
             results = query_sql(
-                key='neighbourhood_group', value=location,
+                key='neighbourhood_group', value=location, budget=budget, stay_nights=2,
                 columns=columns, sql_file=sql_file
             )
 
@@ -172,9 +173,9 @@ def airbnb_bot(sql_file, top_n):
 
             # print the first top_n entries from the results list
             for r in results[:top_n]:
-                number = '"{}", {}. Das Apartment kostet {}€.'.format(
+                number = '"{}", {}. Das Apartment kostet {}€. Du musst mindestens {} Tag(e) in dem Apartment bleiben'.format(
                     # look at the columns list to see what r[0], r[1], r[2] are referring to!
-                    r[0], r[1], r[2]
+                    r[0], r[1], r[2], r[3]
                 )
                 print(number)
             break
