@@ -52,6 +52,7 @@ room_type_regex = [
 
 
 def get_room_type(room_type_sent, regex_list=room_type_regex):
+    # basically the same as the function get_location_from_input(...) earlier
     for regex, value in regex_list:
         match = re.search(regex, room_type_sent)
         if match:
@@ -127,9 +128,9 @@ def airbnb_bot(sql_file, top_n):
             'Die Datei {} konnte nicht gefunden werden!'.format(sql_file)
         )
 
-    #########################################
-    # STEP 1: say hi and ask for user input #
-    #########################################
+    #################################################
+    # STEP 1: say hi and show basic functionalities #
+    #################################################
 
     start_sent = input('Hallöchen! Bist du bereit für eine schöne Reise nach Berlin? ')
     start_sent = start_sent.lower().translate(str.maketrans('', '', string.punctuation))
@@ -149,13 +150,14 @@ def airbnb_bot(sql_file, top_n):
 
 
             #####################################################################
-            # STEP 2: extract location information and check whether it's valid #
+            # STEP 2: ask user for four inputs and extract location, budget,    #
+            #         nights of staying and prefered room typ of the user       #
+            # if input cannot be processed, ask for new inputs till one could   #
             #####################################################################
 
+            # NLU - Sprache verstehen
 
-            # NLU -SPRACHVERSTEHEN
-
-            # extract location from user input
+            # get where the user is about to stay
             answer = True
             while answer:
                 loc_sent = input('\nWo möchtest du denn übernachten? ')
@@ -164,14 +166,14 @@ def airbnb_bot(sql_file, top_n):
                     location = get_location_from_input(loc_sent, regex_list=location_regex)
                     break
 
-            # get budget of the user
+            # get budget
             answer = True
             while answer:
                 budget = input('\nWas ist dein Budget pro Nacht? ')
                 if check_validity(budget, answer) == True:
                     break
 
-            # get how many nights the user wants to stay in
+            # get how many nights the user wants to stay
             answer = True
             while answer:
                 stay_nights = input('\nWie viele Nächte möchtest du übernachten? ')
@@ -179,10 +181,6 @@ def airbnb_bot(sql_file, top_n):
                     break
 
             # get wished room type
-            # room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
-            # room_type_sent = room_type_sent.lower()
-            # wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
-
             answer = True
             while answer:
                 room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
