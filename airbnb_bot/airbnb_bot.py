@@ -47,7 +47,10 @@ room_type_regex = [
     (r'zimmer', 'Private room'),
     (r'wg', 'Private room'),
     (r'hostel', 'Private room'),
-    (r'geteilt', 'Private room')
+    (r'geteilt', 'Shared room'),
+    (r'zweierzimmer', 'Shared room'),
+    (r'hotel', 'Hotel room'),
+    (r'motel', 'Hotel room')
 ]
 
 
@@ -164,6 +167,7 @@ def airbnb_bot(sql_file, top_n):
                 loc_sent = loc_sent.lower()
                 if get_location_from_input(loc_sent, regex_list=location_regex) != None:
                     location = get_location_from_input(loc_sent, regex_list=location_regex)
+                    print("Eine gute Wahl!")
                     break
 
             # get budget
@@ -171,6 +175,7 @@ def airbnb_bot(sql_file, top_n):
             while answer:
                 budget = input('\nWas ist dein Budget pro Nacht? ')
                 if check_validity(budget, answer) == True:
+                    print(f"Mal sehen, was sich für {budget}€ finden lässt...")
                     break
 
             # get how many nights the user wants to stay
@@ -178,12 +183,18 @@ def airbnb_bot(sql_file, top_n):
             while answer:
                 stay_nights = input('\nWie viele Nächte möchtest du übernachten? ')
                 if check_validity(stay_nights, answer) == True:
+                    if int(stay_nights) ==1:
+                        print('Nur eine Nacht? Das wird aber ein kurzer Ausflug.')
+                    elif int(stay_nights) <=3:
+                        print('Ein schöner Kurzurlaub!')
+                    else:
+                        print('Dann hast Du ja viel Zeit dir die Sehenswürdigkeiten anzuschauen!')
                     break
 
             # get wished room type
             answer = True
             while answer:
-                room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment oder nur ein privates Zimmer? ')
+                room_type_sent = input('\nWelche Residenzart gefällt dir besser? Ganzes Haus/Apartment, ein privates, geteiltes oder Hotell-Zimmer? ')
                 room_type_sent = room_type_sent.lower()
                 if get_room_type(room_type_sent, regex_list=room_type_regex) != None:
                     wished_room_type = get_room_type(room_type_sent, regex_list=room_type_regex)
